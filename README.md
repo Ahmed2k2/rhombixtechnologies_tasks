@@ -45,21 +45,53 @@ A simple, responsive photo gallery web app to upload, view, and delete images st
 
 ```json
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": "*",
-      "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::your-bucket-name/*"
-    }
-  ]
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::Your-Bucket-Name/*"
+        }
+    ]
 }
 ```
 
 4. Replace `your-bucket-name` with your actual bucket name.
 
 ---
+
+Here’s the **CORS configuration** for your S3 bucket in JSON format:
+
+```json
+[
+    {
+        "AllowedHeaders": [
+            "*"
+        ],
+        "AllowedMethods": [
+            "GET",
+            "PUT",
+            "POST",
+            "DELETE"
+        ],
+        "AllowedOrigins": [
+            "*"
+        ],
+        "ExposeHeaders": []
+    }
+]
+```
+
+### Steps to Add CORS Configuration
+
+1. In the **AWS Console**, open your **S3 bucket**.
+2. Navigate to **Permissions > CORS Configuration**.
+3. Click **Edit** and paste the above JSON configuration.
+4. Save the changes.
+
+This configuration will allow your application to perform the necessary operations without encountering cross-origin resource sharing (CORS) issues.
 
 ### **Get the Website Link**
 1. Go to **Properties > Static Website Hosting**.  

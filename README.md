@@ -12,101 +12,83 @@ A simple, responsive photo gallery web app to upload, view, and delete images st
 
 ---
 
-## Prerequisites  
-1. **AWS Account** – Create an AWS account.  
-2. **S3 Bucket** – Set up an S3 bucket to store images.  
-3. **IAM User** – Create a user with S3 permissions.  
+### **Prerequisites**
+- AWS Account  
+- AWS CLI (optional, but helpful)  
+- HTML, CSS, JS files for the website
 
 ---
 
-## Setup Instructions  
-
-### Step 1: Clone the Repository  
-```bash  
-git clone https://github.com/your-username/cloud-photo-gallery.git  
-cd cloud-photo-gallery  
-```  
-
-### Step 2: Create an S3 Bucket  
-1. Create a new S3 bucket in AWS.  
-2. Enable **public access** or adjust permissions as needed.  
-3. Create a folder called **`images/`** inside the bucket.  
-
-### Step 3: Set Up IAM User & Credentials  
-1. Create an IAM user with **programmatic access**.  
-2. Attach the **AmazonS3FullAccess** policy.  
-3. Get the **Access Key ID** and **Secret Access Key**.  
+### **Create an S3 Bucket**
+1. Go to **S3** on AWS Console.  
+2. Click **"Create Bucket"**.  
+3. Set a **unique bucket name** and region (e.g., `us-east-1`).  
+4. **Disable "Block All Public Access"**.  
+5. Click **Create Bucket**.
 
 ---
 
-## Configuration  
-
-Update the AWS configuration inside the `index.html` file:
-
-```javascript  
-AWS.config.update({  
-    accessKeyId: "YOUR_ACCESS_KEY_ID",        // Add your Access Key ID  
-    secretAccessKey: "YOUR_SECRET_ACCESS_KEY", // Add your Secret Access Key  
-    region: "YOUR_AWS_REGION"                 // Example: 'us-east-1'  
-});  
-
-const bucketName = 'YOUR_BUCKET_NAME';        // Add your S3 bucket name  
-```  
+### **Enable Static Website Hosting**
+1. In your bucket, go to the **Properties** tab.  
+2. Scroll to **Static Website Hosting** and click **Edit**.  
+3. Enable **"Host a Static Website"**.  
+4. For **Index document**, enter `index.html`.  
+5. Click **Save**.
 
 ---
 
-## How to Use  
-1. Open **index.html** in your browser.  
-2. **Upload Images:** Use the upload button to add images.  
-3. **View Images:** Click any image to open it in a modal.  
-4. **Delete Images:** Use the delete button with confirmation.  
-5. **Sort Images:** Use the dropdown to sort by name, date, or size.  
+### **Upload Files to S3**
+1. Upload `index.html` to the **root directory**.  
+2. Upload images to the `/images` directory.  
+3. Ensure that files are publicly accessible:
+   - Go to **Permissions > Bucket Policy** and add a policy like:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::your-bucket-name/*"
+    }
+  ]
+}
+```
+
+4. Replace `your-bucket-name` with your actual bucket name.
 
 ---
 
-## Optional: Public Bucket Policy  
-
-Add this policy if your bucket needs public access:
-
-```json  
-{  
-  "Version": "2012-10-17",  
-  "Statement": [  
-    {  
-      "Effect": "Allow",  
-      "Principal": "*",  
-      "Action": "s3:GetObject",  
-      "Resource": "arn:aws:s3:::YOUR_BUCKET_NAME/images/*"  
-    }  
-  ]  
-}  
-```  
+### **Get the Website Link**
+1. Go to **Properties > Static Website Hosting**.  
+2. Copy the **Endpoint URL**.  
+3. Use this URL to access your gallery online!
 
 ---
 
-## Troubleshooting  
-- **CORS Error:** Add this CORS policy to your bucket:  
-  ```json  
-  {  
-    "CORSRules": [  
-      {  
-        "AllowedOrigins": ["*"],  
-        "AllowedMethods": ["GET", "POST", "PUT", "DELETE"],  
-        "AllowedHeaders": ["*"]  
-      }  
-    ]  
-  }  
-  ```  
-- **Invalid Credentials:** Ensure your Access Key and Secret Key are correct.  
-- **Access Denied:** Confirm that the IAM user has **S3 permissions**.  
+### **Set AWS Credentials in the Code**
+- Open the JavaScript file and **replace AWS credentials**:
+
+```javascript
+AWS.config.update({
+    accessKeyId: "YOUR_ACCESS_KEY_ID",  // Replace with your access key
+    secretAccessKey: "YOUR_SECRET_ACCESS_KEY",  // Replace with your secret key
+    region: "YOUR_BUCKET_REGION"  // Example: "us-east-1"
+});
+```
+
+---
+
+### **License**
+This project is licensed under the **MIT License** – feel free to use and modify it!
 
 ## Technologies Used  
 - **HTML, CSS, JavaScript** – For the front-end.  
 - **AWS SDK** – To connect with S3.  
 - **S3 Bucket** – Cloud storage for images.  
 
-## License  
-This project is licensed under the **MIT License**.  
 
 ## Contributing  
 Feel free to submit issues or pull requests for improvements!  

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Photo Gallery</title>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1047.0.min.js"></script>
+    <style>
+        /* Reset and Background */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom right, #4facfe, #00f2fe);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            font-size: 36px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Upload Section */
+        input[type="file"] {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            background-color: #ffffff;
+            cursor: pointer;
+            color: #333;
+        }
+
+        button {
+            margin: 10px 5px;
+            padding: 10px 15px;
+            background-color: #28a745;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #218838;
+            transform: scale(1.05);
+        }
+
+        select {
+            margin: 10px;
+            padding: 8px;
+            border-radius: 5px;
+            border: none;
+            background-color: #17a2b8;
+            color: white;
+            cursor: pointer;
+        }
+
+        /* Gallery Section */
+        #gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .image-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+
+        .image-container:hover {
+            transform: scale(1.1);
+        }
+
+        .image-container img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+            transition: opacity 0.5s;
+        }
+
+        .delete-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: rgba(255, 0, 0, 0.8);
+            border: none;
+            padding: 5px 10px;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .delete-button:hover {
+            background-color: #cc0000;
+        }
+
+        /* Modal Styling */
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        #modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 10px;
+            box-shadow: 0px 8px 16px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Navigation Buttons */
+        .nav-button {
+            color: white;
+            font-size: 36px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .nav-button.left {
+            left: 20px;
+        }
+
+        .nav-button.right {
+            right: 20px;
+        }
+
+        .nav-button:hover {
+            transform: scale(1.2);
+        }
+
+        /* Close Button */
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: white;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+
+        .close-button:hover {
+            color: #ff6961;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>Cloud Photo Gallery</h1>
+<input type="file" id="file-upload" multiple>
+<button onclick="uploadFiles()">Upload</button>
+<select id="sort-select" onchange="organizeImages()">
+    <option value="name">Sort by Name</option>
+    <option value="date">Sort by Date</option>
+    <option value="size">Sort by Size</option>
+</select>
+
+<div id="gallery"></div>
+
+<div id="modal">
+    <button class="nav-button left" onclick="changeImage(-1)">&#10094;</button>
+    <img id="modal-img" src="" alt="Image">
+    <button class="nav-button right" onclick="changeImage(1)">&#10095;</button>
+    <button class="close-button" onclick="closeModal()">&times;</button>
+</div>
+
+<script>
+    // ======= INSERT YOUR AWS CREDENTIALS BELOW =======
+    AWS.config.update({
+        accessKeyId: "YOUR_ACCESS_KEY_ID", // Replace with your Access Key ID
+        secretAccessKey: "YOUR_SECRET_ACCESS_KEY", // Replace with your Secret Access Key
+        region: "YOUR_AWS_REGION" // e.g., 'us-east-1'
+    });
+
+    const s3 = new AWS.S3();
+    const bucketName = 'YOUR_BUCKET_NAME'; // Replace with your S3 bucket name
+    let images = [];
+    let currentImageIndex = 0;
+
+    function uploadFiles() {
+        const files = document.getElementById('file-upload').files;
+        for (let file of files) {
+            const params = {
+                Bucket: bucketName,
+                Key: `images/${file.name}`,
+                Body: file
+            };
+            s3.upload(params, (err) => {
+                if (err) console.error(err);
+                else fetchImages();
+            });
+        }
+    }
+
+    function fetchImages() {
+        const params = { Bucket: bucketName, Prefix: 'images/' };
+        s3.listObjects(params, (err, data) => {
+            if (err) console.error(err);
+            else {
+                images = data.Contents.map(item => ({
+                    Key: item.Key,
+                    LastModified: item.LastModified,
+                    Size: item.Size
+                }));
+                organizeImages();
+            }
+        });
+    }
+
+    function confirmDelete(key) {
+        if (confirm('Delete this image?')) {
+            s3.deleteObject({ Bucket: bucketName, Key: key }, fetchImages);
+        }
+    }
+
+    function openModal(src) {
+        document.getElementById('modal').style.display = 'flex';
+        document.getElementById('modal-img').src = src;
+    }
+
+    function closeModal() {
+        document.getElementById('modal').style.display = 'none';
+    }
+
+    function changeImage(direction) {
+        currentImageIndex = (currentImageIndex + direction + images.length) % images.length;
+        document.getElementById('modal-img').src = `https://${bucketName}.s3.amazonaws.com/${images[currentImageIndex].Key}`;
+    }
+
+    function organizeImages() {
+        const sortBy = document.getElementById('sort-select').value;
+        images.sort((a, b) => a.Key.localeCompare(b.Key));
+        renderImages();
+    }
+
+    function renderImages() {
+        const gallery = document.getElementById('gallery');
+        gallery.innerHTML = '';
+        images.forEach(img => {
+            const div = document.createElement('div');
+            div.className = 'image-container';
+            div.innerHTML = `
+                <img src="https://${bucketName}.s3.amazonaws.com/${img.Key}" onclick="openModal(this.src)">
+                <button class="delete-button" onclick="confirmDelete('${img.Key}')">Delete</button>
+            `;
+            gallery.appendChild(div);
+        });
+    }
+
+    fetchImages();
+</script>
+
+</body>
+</html>
+

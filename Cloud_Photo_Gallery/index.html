@@ -92,11 +92,14 @@
 </div>
 
 <script>
-    AWS.config.update({
-        accessKeyId: "YOUR_AWS_ACCESS_KEY", // Replace with your access key
-        secretAccessKey: "YOUR_AWS_SECRET_KEY", // Replace with your secret key
+    // Use environment variables or a configuration object to store credentials
+    const awsConfig = {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID, 
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY, 
         region: "ap-south-1" 
-    });
+    };
+
+    AWS.config.update(awsConfig);
 
     const s3 = new AWS.S3();
     const bucketName = 'cloudphotogallery';
@@ -144,7 +147,7 @@
     }
 
     function confirmDelete(key) {
-        if (confirm("Are you sure you want to delete this image?")) {
+        if (confirm(`Are you sure you want to delete this image?`)) {
             const params = {
                 Bucket: bucketName,
                 Key: key

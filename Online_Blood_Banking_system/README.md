@@ -203,4 +203,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
+
+## Contributing  
+Feel free to submit issues or pull requests for improvements!  
+
+
+## Contact  
+For any questions, reach out at [raza37487@gmail.com]. 
+
 **Enjoy managing blood donations and requests with your new Online Blood Banking System!** 😊
